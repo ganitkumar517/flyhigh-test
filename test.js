@@ -1,38 +1,34 @@
-const express = require('express');
-const bodyParser = require('body-parser');
-const request = require('request');
+const axios = require('axios');
 const cheerio = require('cheerio');
 
-const app = express();
-app.use(bodyParser.json());
+function getWordFrequency(url) {
+  return axios.get(url)
+    .then(response => {
+      const $ = cheerio.load(response.data);
 
-app.post('/', (req, res) => {
-  const url = req.body.url;
+      const text = $('body').text();
 
-  request(url, (error, response, html) => {
-    if (!error && response.statusCode == 200) {
-      const $ = cheerio.load(html);
-      const words = $('body').text().split(' ');
-      const wordCounts = {};
-      
-      for (const word of words) {
-        if (word in wordCounts) {
-          wordCounts[word] += 1;
-        } else {
-          wordCounts[word] = 1;
-        }
+      const words = text.toLowerCase().match(/[a-z]+/g);
+
+      const wordFrequency = new Map();
+      words.forEach(word => {
+        const count = wordFrequency.get(word) || 0;
+        wordFrequency.set(word, count + 1);
+      });
+
+      const result = {};
+      for (let [word, count] of wordFrequency.entries()) {
+        result[word] = count;
       }
-      
-      const uniqueWords = Object.keys(wordCounts);
-      const wordFrequency = Object.values(wordCounts);
-      const responseData = { 'words': uniqueWords, 'frequency': wordFrequency };
-      res.json(responseData);
-    } else {
-      res.status(400).json({ 'error': 'Invalid URL' });
-    }
-  });
-});
+      return result;
+    })
+    .catch(error => {
+      console.error(error);
+    });
+}
 
-app.listen(3000, () => {
-  console.log('Server listening on port 3000');
-});
+const url = 'https://en.wikipedia.org/wiki/Python_(programming_language)';
+getWordFrequency(url)
+  .then(result => {
+    console.log(result);
+  });
