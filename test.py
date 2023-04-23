@@ -1,21 +1,25 @@
-from collections import Counter
 import requests
 from bs4 import BeautifulSoup
-from flask import Flask, request, jsonify
+import json
 
-app = Flask(__name__)
-
-@app.route('/', methods=['POST'])
-def analyze_url():
-    url = request.json.get('url')
+def get_word_frequency(url):
     response = requests.get(url)
-    soup = BeautifulSoup(response.text, 'html.parser')
-    words = soup.get_text().split()
-    word_counts = Counter(words)
-    unique_words = list(word_counts.keys())
-    word_frequency = list(word_counts.values())
-    response_data = {'words': unique_words, 'frequency': word_frequency}
-    return jsonify(response_data)
 
-if __name__ == '__main__':
-    app.run(debug=True)
+    soup = BeautifulSoup(response.content, 'html.parser')
+ 
+    text = soup.get_text()
+
+    words = [word.lower().strip('.,!?"\'') for word in text.split()]
+    word_frequency = {}
+    for word in words:
+        if word in word_frequency:
+            word_frequency[word] += 1
+        else:
+            word_frequency[word] = 1
+
+    return json.dumps(word_frequency)
+
+
+url = 'https://en.wikipedia.org/wiki/Python_(programming_language)'
+word_frequency = get_word_frequency(url)
+print(word_frequency)
