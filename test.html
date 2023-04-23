@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>wordFrequency</title>
+  <style>
+ div {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  margin: 0;
+}
+
+
+  </style>
+</head>
+<body>
+  <div>
+  <label for="url-input">Enter URL:</label>
+  <input id="url-input" type="text">
+  <button id="submit-button">Submit</button><br/>
+  </div>
+  <pre id="output"></pre>
+  
+  <script>
+    function getWordFrequency(url) {
+      return fetch("https://cors-anywhere.herokuapp.com/"+url)
+        .then(response => response.text())
+        .then(html => {
+          const text = html.replace(/<[^>]*>/g, '');
+
+          const words = text.toLowerCase().match(/[a-z]+/g);
+
+          const wordFrequency = new Map();
+          words.forEach(word => {
+            const count = wordFrequency.get(word) || 0;
+            wordFrequency.set(word, count + 1);
+          });
+
+          const result = {};
+          for (let [word, count] of wordFrequency.entries()) {
+            result[word] = count;
+          }
+          return result;
+        })
+        .catch(error => {
+          console.error(error);
+        });
+    }
+
+    const urlInput = document.getElementById('url-input');
+    const submitButton = document.getElementById('submit-button');
+    const output = document.getElementById('output');
+
+    submitButton.addEventListener('click', () => {
+      const url = urlInput.value;
+      getWordFrequency(url)
+        .then(result => {
+          output.textContent = JSON.stringify(result, null, 2);
+        });
+    });
+  </script>
+</body>
+</html>
